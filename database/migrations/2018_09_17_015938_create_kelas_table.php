@@ -18,8 +18,11 @@ class CreateKelasTable extends Migration
             $table->string('nama');
             $table->string('kelas');
             $table->string('jurusan');
+            $table->date('tgl_lahir');
             $table->string('jk');
             $table->string('alamat');
+            $table->string('hobi');
+            $table->text('Photo')->nullable();
             $table->timestamps();
         });
     }

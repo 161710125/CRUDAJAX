@@ -16,16 +16,19 @@
       <br />
       <h3 align="center">DataTables Daftar Siswa</h3>
       <br />
-      <button type="button" name="add" id="Tambah" class="btn btn-primary btn-sm">Tambah</button><br>
+      <button type="button" name="add" id="Tambah" class="btn btn-primary pull-right">Tambah</button><br><br>
       <table id="stud" class="table table-bordered" style="width:100%">
          <thead>
             <tr>
                <th>ID</th>
-               <th>Nama Siswa</th>
+               <th width="300px">Nama Siswa</th>
                <th>Kelas</th>
                <th>Jurusan</th>
+               <th>Tanggal Lahir</th>
                <th>Jenis Kelamin</th>
-               <th>Alamat</th>
+               <th width="190px">Alamat</th>
+               <th width="170px">Hobi</th>
+               <th>Image</th>
                <th width="200px"><center>Action</center></th>
             </tr>
          </thead>
@@ -43,8 +46,11 @@
             { data: 'nama', name: 'nama' },
             { data: 'kelas', name: 'kelas' },
             { data: 'jurusan', name: 'jurusan' },
+            { data: 'tgl_lahir', name: 'tgl_lahir' },
             { data: 'jk', name: 'jk' },
             { data: 'alamat', name: 'alamat' },
+            { data: 'hobi', name: 'hobi' },
+            { data: 'show_photo', name: 'show_photo'},
             { data: 'action', orderable:false, searchable: false}
          ],
          "lengthMenu": [[-1, 10, 5, 2], ["All", 10, 5, 2]]
@@ -53,8 +59,17 @@
          $('#Tambah').click(function(){
               $('#studentModal').modal('show');
               $('#student_form')[0].reset();
+              $('#aksi').val('Tambah');
+              $('.modal-title').text('Tambah Data');
               state = "insert";
             });
+
+         $('#studentModal').on('hidden.bs.modal', function(e){
+          $(this).find('#student_form')[0].reset();
+          $('span.has-error').text('')
+          $('.form-group.has-error').removeClass('has-error');
+         });
+         
            $('#student_form').submit(function(e){
              $.ajaxSetup({
                header: {
@@ -66,12 +81,22 @@
              $.ajax({
                type: "POST",
                url: "{{url ('/store')}}",
-               data: $('#student_form').serialize(),
+               // data: $('#student_form').serialize(),
+               data: new FormData(this),
+               contentType: false,
+               processData: false,
                dataType: 'json',
                success: function (data){
                  console.log(data);
                  $('#studentModal').modal('hide');
+                 $('#aksi').val('Tambah');
                  $('#stud').DataTable().ajax.reload();
+                    swal({
+                                title: 'Success!',
+                                text: data.message,
+                                type: 'success',
+                                timer: '3500'
+                            })
                },
                error: function (data){
                 $('input').on('keydown keypress keyup click change', function(){
@@ -130,8 +155,14 @@
                 data:{id:dele},
                 success:function(data)
                 {
-                    alert(data);
-                    $('#stud').DataTable().ajax.reload();
+                  $('#stud').DataTable().ajax.reload();
+                    swal({
+                                title: 'Success!',
+                                text: data.message,
+                                type: 'success',
+                                timer: '3500'
+                            })
+
                 }
             })
         }
@@ -153,6 +184,9 @@
             success:function(data)
             {
               console.log(data);
+              var test = data.hobi;
+              var hobi_array = test.split(',');
+              console.log(hobi_array);
                 state = "update";
                 $('#id').val(data.id);
                 $('#nama').val(data.nama);
@@ -164,13 +198,20 @@
                 $('#nama').val(data.nama);
                 $('#kelas').val(data.kelas);
                 $('#jurusan').val(data.jurusan);
-                $('#jk').val(data.jk);
+                $('#tgl_lahir').val(data.tgl_lahir);
                 $('#alamat').val(data.alamat);
+                
+                for (i=0; i<hobi_array.length;i++) {
+                  var checkbox = $("input[type='checkbox'][value='"+hobi_array[i]+"']");
+                  checkbox.attr("checked","checked");
+                }
+
+                $("input[type='checkbox']").prop({disable: true});
                 $('#student_id').val(edit);
                 $('#studentModal').modal('show');
                 $('#aksi').val('Edit');
                 $('.modal-title').text('Edit Data');
-            }
+            },
         })
     });
       </script>

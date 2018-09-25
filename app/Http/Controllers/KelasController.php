@@ -6,6 +6,7 @@ use App\Kelas;
 use Illuminate\Http\Request;
 use Yajra\Datatables\Html\Builder;
 use Yajra\DataTables\Datatables;
+use File;
 
 class KelasController extends Controller
 {
@@ -17,12 +18,18 @@ class KelasController extends Controller
     
  
     public function json(){
-        $sis = Kelas::select('id','nama','kelas','jurusan','jk','alamat','created_at','updated_at');
+        $sis = Kelas::all();
         return Datatables::of($sis)
+        ->addColumn('show_photo', function($sis){
+                if ($sis->Photo == NULL){
+                    return 'No Image!';
+                }
+                return '<img class="rounded-square" width="50" height="50" src="'. url($sis->Photo) .'" alt="">';
+            })
         ->addColumn('action',function($sis){
                 return '<center><a href="#" class="btn btn-xs btn-primary edit" data-id="'.$sis->id.'"><i class="glyphicon glyphicon-edit"></i> Edit</a> | <a href="#" class="btn btn-xs btn-danger delete" id="'.$sis->id.'"><i class="glyphicon glyphicon-remove"></i> Delete</a></center>';
             })
-            ->make(true);
+            ->rawColumns(['action','show_photo'])->make(true);
     }
 
 
@@ -54,18 +61,37 @@ class KelasController extends Controller
             'nama' => 'required|unique:kelas,nama',
             'kelas'=>'max:12|required',
             'jurusan'=>'max:255|required',
+            'tgl_lahir'=>'required',
             'jk'=>'max:255|required',
-            'alamat'=>'max:255|required'
+            'alamat'=>'max:255|required',
+            'hobi'=>'max:225|required'
         ],[
             'nama.unique'=>'Data dengan nama tersebut sudah ada di database',
             'nama.required'=>'Nama tidak boleh kosong',
             'kelas.required'=>'Kelas tidak boleh kosong',
             'jurusan.required'=>'Jurusan tidak boleh kosong',
+            'tgl_lahir.required'=>'Tanggal Lahir tidak boleh kosong',
             'jk.required'=>'Jenis Kelamin tidak boleh kosong',
-            'alamat.required'=>'Alamat tidak boleh kosong'
+            'alamat.required'=>'Alamat tidak boleh kosong',
+            'hobi.required'=>'Hobi tidak boleh kosong'
     ]);
-        $kelas = Kelas::create($request->all());
-        return response()->json(['success'=>true]);
+            $data = new Kelas;
+            $data->nama = $request->nama;
+            $data->kelas = $request->kelas;
+            $data->jurusan = $request->jurusan;
+            $data->tgl_lahir = $request->tgl_lahir;
+            $data->jk = $request->jk;
+            $data->alamat = $request->alamat;
+            $data->hobi = implode(", ", $request->hobi);
+
+            $data['Photo'] = null;
+            if ($request->hasFile('Photo')){
+            $data['Photo'] = '/upload/Photo/'.str_slug($data['nama'], '-').'.'.$request->Photo->getClientOriginalExtension();
+            $request->Photo->move(public_path('/upload/Photo/'), $data['Photo']);
+            }
+
+            $data->save();
+            return response()->json(['success'=>true]);
     }
 
     /**
@@ -87,7 +113,7 @@ class KelasController extends Controller
      */
     public function edit($id)
     {
-        $guru = Kelas::find($id);
+        $guru = Kelas::findOrFail($id);
         return $guru;
     }
 
@@ -101,25 +127,49 @@ class KelasController extends Controller
     public function update(Request $request, $id)
     {
         $this->validate($request, [
-            'nama' => 'required|',
+            'nama' => 'required',
             'kelas'=>'max:12|required',
             'jurusan'=>'max:255|required',
+            'tgl_lahir'=>'required',
             'jk'=>'max:255|required',
-            'alamat'=>'max:255|required'
+            'alamat'=>'max:255|required',
+            'hobi'=>'max:225|required'
         ],[
             'nama.required'=>'Nama tidak boleh kosong',
             'kelas.required'=>'Kelas tidak boleh kosong',
             'jurusan.required'=>'Jurusan tidak boleh kosong',
             'jk.required'=>'Jenis Kelamin tidak boleh kosong',
-            'alamat.required'=>'Alamat tidak boleh kosong'
+            'alamat.required'=>'Alamat tidak boleh kosong',
+            'hobi.required'=>'Hobi tidak boleh kosong'
     ]);
-        $guru = Kelas::find($id);
-        $guru->nama = $request->nama;
-        $guru->kelas = $request->kelas;
-        $guru->jurusan = $request->jurusan;
-        $guru->jk = $request->jk;
-        $guru->alamat = $request->alamat;
-        $succes = $guru->save();
+        $data = Kelas::find($id);
+        $data->nama = $request->nama;
+        $data->kelas = $request->kelas;
+        $data->jurusan = $request->jurusan;
+        $data->tgl_lahir = $request->tgl_lahir;
+        $data->jk = $request->jk;
+        $data->alamat = $request->alamat;
+        $data->hobi = implode(", ", $request->hobi);
+
+        $data['Photo'] = $data->Photo;
+            if ($request->hasFile('Photo')){
+                if (!$data->Photo == NULL){
+                unlink(public_path($data->Photo));
+            }
+            $data['Photo'] = '/upload/Photo/'.str_slug($data['nama'], '-').'.'.$request->Photo->getClientOriginalExtension();
+            $request->Photo->move(public_path('/upload/Photo/'), $data['Photo']);
+            }
+        
+        // $data['Photo'] = $data->Photo;
+        // if ($request->hasFile('Photo')){
+        //     if (!$data->Photo == NULL){
+        //         unlink(public_path($data->Photo));
+        //     }
+        //    $data['Photo'] = '/upload/Photo/'.str_slug($data['nama'], '-').'.'.$request->Photo->getClientOriginalExtension();
+        //     $request->Photo->move(public_path('/upload/Photo/'), $data['Photo']);
+        // }
+
+        $succes = $data->save();
         if ($succes){
             return response()->json([
                 'success' => true,
@@ -135,6 +185,7 @@ class KelasController extends Controller
      */
     public function destroy($id)
     {
+        $heem = Kelas::findOrFail($id);
         Kelas::destroy($id);
     }
 
@@ -155,8 +206,10 @@ class KelasController extends Controller
             'nama'    =>  $student->nama,
             'kelas'     =>  $student->kelas,
             'jurusan'     =>  $student->jurusan,
+            'tgl_lahir'     =>  $student->tgl_lahir,
             'jk'     =>  $student->jk,
             'alamat'     =>  $student->alamat,
+            'hobi'      => $student->hobi
         );
         echo json_encode($output);
     }
