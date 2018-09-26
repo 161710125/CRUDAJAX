@@ -118,12 +118,21 @@
             $.ajax({
                type: "POST",
                url: "{{url ('/siswa/edit')}}"+ '/' + $('#id').val(),
-               data: $('#student_form').serialize(),
+               // data: $('#student_form').serialize(),
+               data: new FormData(this),
+               contentType: false,
+               processData: false,
                dataType: 'json',
                success: function (data){
                  console.log(data);
                  $('#studentModal').modal('hide');
                  $('#stud').DataTable().ajax.reload();
+                 swal({
+                                title: 'Success!',
+                                text: data.message,
+                                type: 'success',
+                                timer: '3500'
+                            })
                },
                error: function (data){
                 $('input').on('keydown keypress keyup click change', function(){

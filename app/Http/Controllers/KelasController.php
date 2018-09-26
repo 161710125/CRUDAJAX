@@ -24,7 +24,7 @@ class KelasController extends Controller
                 if ($sis->Photo == NULL){
                     return 'No Image!';
                 }
-                return '<img class="rounded-square" width="50" height="50" src="'. url($sis->Photo) .'" alt="">';
+                return '<img class="rounded-square" width="50" height="50" src="'. url($sis->Photo) .'?'.time().'" alt="">';
             })
         ->addColumn('action',function($sis){
                 return '<center><a href="#" class="btn btn-xs btn-primary edit" data-id="'.$sis->id.'"><i class="glyphicon glyphicon-edit"></i> Edit</a> | <a href="#" class="btn btn-xs btn-danger delete" id="'.$sis->id.'"><i class="glyphicon glyphicon-remove"></i> Delete</a></center>';
@@ -185,8 +185,8 @@ class KelasController extends Controller
      */
     public function destroy($id)
     {
-        $heem = Kelas::findOrFail($id);
-        Kelas::destroy($id);
+        // $heem = Kelas::findOrFail($id);
+        // Kelas::destroy($id);
     }
 
     public function removedata(Request $request)
@@ -194,6 +194,9 @@ class KelasController extends Controller
         $sis = Kelas::find($request->input('id'));
         if($sis->delete())
         {
+            if (!$sis->Photo == NULL){
+                unlink(public_path($sis->Photo));
+            }
             echo 'Data Deleted';
         }
     }
